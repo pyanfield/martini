@@ -1,10 +1,10 @@
 // Package martini is a powerful package for quickly writing modular web applications/services in Golang.
 //
-// For a full guide visit http://github.com/codegangsta/martini
+// For a full guide visit http://github.com/go-martini/martini
 //
 //  package main
 //
-//  import "github.com/codegangsta/martini"
+//  import "github.com/go-martini/martini"
 //
 //  func main() {
 //    m := martini.Classic()
@@ -78,8 +78,10 @@ func (m *Martini) Run() {
 
 	host := os.Getenv("HOST")
 
-	m.logger.Println("listening on " + host + ":" + port)
-	m.logger.Fatalln(http.ListenAndServe(host+":"+port, m))
+	logger := m.Injector.Get(reflect.TypeOf(m.logger)).Interface().(*log.Logger)
+
+	logger.Println("listening on " + host + ":" + port)
+	logger.Fatalln(http.ListenAndServe(host+":"+port, m))
 }
 
 func (m *Martini) createContext(res http.ResponseWriter, req *http.Request) *context {
