@@ -35,6 +35,7 @@ type Martini struct {
 }
 
 // New creates a bare bones Martini instance. Use this method if you want to have full control over the middleware that is used.
+// 生成一个完全由自己选择的中间件组成的Martini实例
 func New() *Martini {
 	m := &Martini{Injector: inject.New(), action: func() {}, logger: log.New(os.Stdout, "[martini] ", 0)}
 	m.Map(m.logger)
@@ -44,6 +45,7 @@ func New() *Martini {
 
 // Handlers sets the entire middleware stack with the given Handlers. This will clear any current middleware handlers.
 // Will panic if any of the handlers is not a callable function
+// 清空当前中间件Handler列表，取而代之的是给定的列表，如果列表中的Handler不是可调函数，则panic
 func (m *Martini) Handlers(handlers ...Handler) {
 	m.handlers = make([]Handler, 0)
 	for _, handler := range handlers {
@@ -58,6 +60,7 @@ func (m *Martini) Action(handler Handler) {
 }
 
 // Use adds a middleware Handler to the stack. Will panic if the handler is not a callable func. Middleware Handlers are invoked in the order that they are added.
+// 将中间件的handler添加到列表中，按照添加的顺序来调用函数。
 func (m *Martini) Use(handler Handler) {
 	validateHandler(handler)
 
@@ -65,6 +68,7 @@ func (m *Martini) Use(handler Handler) {
 }
 
 // ServeHTTP is the HTTP Entry point for a Martini instance. Useful if you want to control your own HTTP server.
+// ServeHTTP 是http服务的起始点，可以通过其实现自己控制的http服务
 func (m *Martini) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	m.createContext(res, req).run()
 }
@@ -101,6 +105,8 @@ type ClassicMartini struct {
 
 // Classic creates a classic Martini with some basic default middleware - martini.Logger, martini.Recovery and martini.Static.
 // Classic also maps martini.Routes as a service.
+// Classic 实现了一些默认的基本中间件，如果想自定义可以通过New函数实现。
+// 默认使用martini.Routes作为路由服务
 func Classic() *ClassicMartini {
 	r := NewRouter()
 	m := New()
@@ -141,6 +147,7 @@ type context struct {
 	index    int
 }
 
+// 根据当前的索引来返回Handler，最后一个是Action
 func (c *context) handler() Handler {
 	if c.index < len(c.handlers) {
 		return c.handlers[c.index]
@@ -151,6 +158,7 @@ func (c *context) handler() Handler {
 	panic("invalid index for context handler")
 }
 
+// 执行handler列表中的下一个handler
 func (c *context) Next() {
 	c.index += 1
 	c.run()
@@ -160,6 +168,7 @@ func (c *context) Written() bool {
 	return c.rw.Written()
 }
 
+// 执行当前handler，同时索引指向下一个
 func (c *context) run() {
 	for c.index <= len(c.handlers) {
 		_, err := c.Invoke(c.handler())
