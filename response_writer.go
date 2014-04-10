@@ -25,6 +25,7 @@ type ResponseWriter interface {
 }
 
 // BeforeFunc is a function that is called before the ResponseWriter has been written to.
+// BeforeFunc 在 ResponseWriter 被写入之前调用得一个函数
 type BeforeFunc func(ResponseWriter)
 
 // NewResponseWriter creates a ResponseWriter that wraps an http.ResponseWriter
@@ -39,12 +40,15 @@ type responseWriter struct {
 	beforeFuncs []BeforeFunc
 }
 
+// 设置 HTTP 的响应的 header 的 status code
 func (rw *responseWriter) WriteHeader(s int) {
 	rw.callBefore()
 	rw.ResponseWriter.WriteHeader(s)
 	rw.status = s
 }
 
+// 写入 HTTP 的响应数据，如果没有被写入过数据，则设置响应头得 status code 为 StatusOK
+// 计算 HTTP 响应得大小并返回大小值
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	if !rw.Written() {
 		// The status will be StatusOK if WriteHeader has not been called yet
@@ -55,14 +59,17 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return size, err
 }
 
+// 返回响应状态码
 func (rw *responseWriter) Status() int {
 	return rw.status
 }
 
+// 返回响应大小
 func (rw *responseWriter) Size() int {
 	return rw.size
 }
 
+// 判断响应体是否被写入过数据,写入过数据的状态码不为0
 func (rw *responseWriter) Written() bool {
 	return rw.status != 0
 }
@@ -72,6 +79,7 @@ func (rw *responseWriter) Before(before BeforeFunc) {
 }
 
 func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	// 判断是否支持 http.Hijacker
 	hijacker, ok := rw.ResponseWriter.(http.Hijacker)
 	if !ok {
 		return nil, nil, fmt.Errorf("the ResponseWriter doesn't support the Hijacker interface")
@@ -79,16 +87,19 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return hijacker.Hijack()
 }
 
+// 当客户端失去连接之后，发送一个通知
 func (rw *responseWriter) CloseNotify() <-chan bool {
 	return rw.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
 
+// 逐个调用 beforeFuncs 列表里面得函数
 func (rw *responseWriter) callBefore() {
 	for i := len(rw.beforeFuncs) - 1; i >= 0; i-- {
 		rw.beforeFuncs[i](rw)
 	}
 }
 
+// 发送所有缓存数据到客户端
 func (rw *responseWriter) Flush() {
 	flusher, ok := rw.ResponseWriter.(http.Flusher)
 	if ok {

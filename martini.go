@@ -122,6 +122,7 @@ func Classic() *ClassicMartini {
 // Martini will panic if an argument could not be fullfilled via dependency injection.
 type Handler interface{}
 
+// 判断 handler 得reflect.Type 是否为 Func 类型，如果不是将 panic
 func validateHandler(handler Handler) {
 	if reflect.TypeOf(handler).Kind() != reflect.Func {
 		panic("martini handler must be a callable func")
@@ -147,7 +148,7 @@ type context struct {
 	index    int
 }
 
-// 根据当前的索引来返回Handler，最后一个是Action
+// 根据当前的索引来返回Handler，如果当前索引为最后一个，则返回Action
 func (c *context) handler() Handler {
 	if c.index < len(c.handlers) {
 		return c.handlers[c.index]
@@ -164,6 +165,7 @@ func (c *context) Next() {
 	c.run()
 }
 
+// 判断 response 是否已经被写入了
 func (c *context) Written() bool {
 	return c.rw.Written()
 }
