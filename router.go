@@ -105,6 +105,7 @@ func (r *router) Any(pattern string, h ...Handler) Route {
 
 func (r *router) Handle(res http.ResponseWriter, req *http.Request, context Context) {
 	for _, route := range r.routes {
+		// 路由匹配
 		ok, vals := route.Match(req.Method, req.URL.Path)
 		if ok {
 			params := Params(vals)
@@ -115,8 +116,10 @@ func (r *router) Handle(res http.ResponseWriter, req *http.Request, context Cont
 	}
 
 	// no routes exist, 404
+	// 路由匹配失败，则设置 handlers 为 notFounds
 	c := &routeContext{context, 0, r.notFounds}
 	context.MapTo(c, (*Context)(nil))
+	// 调用 notFounds
 	c.run()
 }
 
@@ -124,6 +127,7 @@ func (r *router) NotFound(handler ...Handler) {
 	r.notFounds = handler
 }
 
+// 将一个具体的路由添加到路由器中
 func (r *router) addRoute(method string, pattern string, handlers []Handler) *route {
 	if len(r.groups) > 0 {
 		groupPattern := ""
@@ -138,12 +142,14 @@ func (r *router) addRoute(method string, pattern string, handlers []Handler) *ro
 		handlers = h
 	}
 
+	// 创建 route 对象，判断所有 handlers 是否为可执行的函数，如果是，则将该对象添加到路由器中
 	route := newRoute(method, pattern, handlers)
 	route.Validate()
 	r.routes = append(r.routes, route)
 	return route
 }
 
+// 在路由其中通过路由的名字来查找路由
 func (r *router) findRoute(name string) *route {
 	for _, route := range r.routes {
 		if route.name == name {
@@ -169,6 +175,7 @@ type route struct {
 	name     string
 }
 
+// 创建一个路由对象
 func newRoute(method string, pattern string, handlers []Handler) *route {
 	route := route{method, nil, handlers, pattern, ""}
 	r := regexp.MustCompile(`:[^/#?()\.\\]+`)
@@ -186,6 +193,7 @@ func newRoute(method string, pattern string, handlers []Handler) *route {
 	return &route
 }
 
+// 检查路由方法是否匹配
 func (r route) MatchMethod(method string) bool {
 	return r.method == "*" || method == r.method || (method == "HEAD" && r.method == "GET")
 }
@@ -209,6 +217,7 @@ func (r route) Match(method string, path string) (bool, map[string]string) {
 	return false, nil
 }
 
+// 判断路由中的所有 handlers 是否为可执行函数
 func (r *route) Validate() {
 	for _, handler := range r.handlers {
 		validateHandler(handler)
@@ -222,6 +231,7 @@ func (r *route) Handle(c Context, res http.ResponseWriter) {
 }
 
 // URLWith returns the url pattern replacing the parameters for its values
+// 将 url pattern 中的参数替换成实际值，返回完整的 url 地址
 func (r *route) URLWith(args []string) string {
 	if len(args) > 0 {
 		reg := regexp.MustCompile(`:[^/#?()\.\\]+`)
@@ -248,6 +258,9 @@ func (r *route) Name(name string) {
 }
 
 // Routes is a helper service for Martini's routing layer.
+// Routes 是为 Martini 路由层提供帮助的服务
+// URLFor 根据给定的路由名称和可选参数的信息，返回相应的路由地址
+// MethodsFor 根据给定的路由地址，返回与该地址匹配的所有 http 方法
 type Routes interface {
 	// URLFor returns a rendered URL for the given route. Optional params can be passed to fulfill named parameters in the route.
 	URLFor(name string, params ...interface{}) string
@@ -256,6 +269,7 @@ type Routes interface {
 }
 
 // URLFor returns the url for the given route name.
+// 根绝给定的路由的名字，查找相应的路由，然后将路由地址中的参数替换成 params 中的字符串，返回完整的 URL 地址
 func (r *router) URLFor(name string, params ...interface{}) string {
 	route := r.findRoute(name)
 
@@ -264,6 +278,7 @@ func (r *router) URLFor(name string, params ...interface{}) string {
 	}
 
 	var args []string
+	// 将 params 中的值转化成字符串类型，保存到 args 数组中
 	for _, param := range params {
 		switch v := param.(type) {
 		case int:
@@ -280,6 +295,7 @@ func (r *router) URLFor(name string, params ...interface{}) string {
 	return route.URLWith(args)
 }
 
+// 检查 methods 数组中是否有 method
 func hasMethod(methods []string, method string) bool {
 	for _, v := range methods {
 		if v == method {
@@ -290,6 +306,7 @@ func hasMethod(methods []string, method string) bool {
 }
 
 // MethodsFor returns all methods available for path
+// 返回给定路径下的所有 http 方法
 func (r *router) MethodsFor(path string) []string {
 	methods := []string{}
 	for _, route := range r.routes {
@@ -312,6 +329,7 @@ func (r *routeContext) Next() {
 	r.run()
 }
 
+// 执行所有的 handler，如果 handler 有返回结果，那么执行 ReturnHandler
 func (r *routeContext) run() {
 	for r.index < len(r.handlers) {
 		handler := r.handlers[r.index]
@@ -323,6 +341,7 @@ func (r *routeContext) run() {
 
 		// if the handler returned something, write it to the http response
 		if len(vals) > 0 {
+			// 注意这里通过 defaultReturnHandler() 返回的就是 ReturnHandler
 			ev := r.Get(reflect.TypeOf(ReturnHandler(nil)))
 			handleReturn := ev.Interface().(ReturnHandler)
 			handleReturn(r, vals)

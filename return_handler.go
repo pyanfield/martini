@@ -10,6 +10,8 @@ import (
 // when a route handler returns something. The ReturnHandler is
 // responsible for writing to the ResponseWriter based on the values
 // that are passed into this function.
+// ReturnHandler 是 Martini 提供的一个服务，当路由处理有一些东西返回的时候会被调用到。
+// 其主要职责是根据传入的值，写入 ResponseWriter
 type ReturnHandler func(Context, []reflect.Value)
 
 func defaultReturnHandler() ReturnHandler {
@@ -34,10 +36,12 @@ func defaultReturnHandler() ReturnHandler {
 	}
 }
 
+// 判断是否是 byte slice
 func isByteSlice(val reflect.Value) bool {
 	return val.Kind() == reflect.Slice && val.Type().Elem().Kind() == reflect.Uint8
 }
 
+// 判断是否是指针类型或者是借口类型
 func canDeref(val reflect.Value) bool {
 	return val.Kind() == reflect.Interface || val.Kind() == reflect.Ptr
 }

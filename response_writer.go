@@ -69,7 +69,7 @@ func (rw *responseWriter) Size() int {
 	return rw.size
 }
 
-// 判断响应体是否被写入过数据,写入过数据的状态码不为0
+// 根据写入过数据的状态码是否为 0 来判断响应体是否被写入过数据
 func (rw *responseWriter) Written() bool {
 	return rw.status != 0
 }

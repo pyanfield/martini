@@ -29,16 +29,20 @@ import (
 // Martini represents the top level web application. inject.Injector methods can be invoked to map services on a global level.
 type Martini struct {
 	inject.Injector
+	// 通过 martini.Use 添加
 	handlers []Handler
-	action   Handler
-	logger   *log.Logger
+	// 通过 martini.Action 添加
+	action Handler
+	logger *log.Logger
 }
 
 // New creates a bare bones Martini instance. Use this method if you want to have full control over the middleware that is used.
 // 生成一个完全由自己选择的中间件组成的Martini实例
 func New() *Martini {
 	m := &Martini{Injector: inject.New(), action: func() {}, logger: log.New(os.Stdout, "[martini] ", 0)}
+	// Map 了默认的 log.Logger 和 ReturnHandler 对象
 	m.Map(m.logger)
+	// 注意 route.go 中 func (r *routeContext) run()
 	m.Map(defaultReturnHandler())
 	return m
 }
@@ -54,6 +58,7 @@ func (m *Martini) Handlers(handlers ...Handler) {
 }
 
 // Action sets the handler that will be called after all the middleware has been invoked. This is set to martini.Router in a martini.Classic().
+// Action 设置了在所有的中间件被调用完之后再做调用的处理方法，在 martini.Classic() 中被设置成了路由器
 func (m *Martini) Action(handler Handler) {
 	validateHandler(handler)
 	m.action = handler
@@ -74,6 +79,7 @@ func (m *Martini) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 // Run the http server. Listening on os.GetEnv("PORT") or 3000 by default.
+// 运行 http 服务，监听 os.GetEnv("PORT") 端口，默认设置为 3000
 func (m *Martini) Run() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -88,6 +94,7 @@ func (m *Martini) Run() {
 	logger.Fatalln(http.ListenAndServe(host+":"+port, m))
 }
 
+// 创建 *context 对象
 func (m *Martini) createContext(res http.ResponseWriter, req *http.Request) *context {
 	c := &context{inject.New(), m.handlers, m.action, NewResponseWriter(res), 0}
 	c.SetParent(m)
@@ -110,10 +117,15 @@ type ClassicMartini struct {
 func Classic() *ClassicMartini {
 	r := NewRouter()
 	m := New()
+	// 通过 Use 方法，将中间件添加到 martini.handlers 中
 	m.Use(Logger())
 	m.Use(Recovery())
 	m.Use(Static("public"))
 	m.MapTo(r, (*Routes)(nil))
+	// Router.Handle 是路由的入口. 作为 martini.Handler 被使用
+	// 将 Router.Handle 添加到 m.action
+	// 因为通过 Use 和 Action 添加的 Handler 添加到不同的 handlers 里
+	// 所以通过 Use 添加的 Handler 无论在什么地方添加，都会比 Action 添加的 Handler 先执行
 	m.Action(r.Handle)
 	return &ClassicMartini{m, r}
 }
@@ -170,7 +182,7 @@ func (c *context) Written() bool {
 	return c.rw.Written()
 }
 
-// 执行当前handler，同时索引指向下一个
+// 执行当前所有的 handlers，同时索引指向下一个
 func (c *context) run() {
 	for c.index <= len(c.handlers) {
 		_, err := c.Invoke(c.handler())
@@ -179,6 +191,7 @@ func (c *context) run() {
 		}
 		c.index += 1
 
+		// 如果 response status 为 0，那么立即停止执行 handlers
 		if c.Written() {
 			return
 		}
