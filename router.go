@@ -164,7 +164,14 @@ func (r *router) findRoute(name string) *route {
 type Route interface {
 	// URLWith returns a rendering of the Route's url with the given string params.
 	URLWith([]string) string
+	// Name sets a name for the route.
 	Name(string)
+	// GetName returns the name of the route.
+	GetName() string
+	// Pattern returns the pattern of the route.
+	Pattern() string
+	// Method returns the method of the route.
+	Method() string
 }
 
 type route struct {
@@ -257,6 +264,18 @@ func (r *route) Name(name string) {
 	r.name = name
 }
 
+func (r *route) GetName() string {
+	return r.name
+}
+
+func (r *route) Pattern() string {
+	return r.pattern
+}
+
+func (r *route) Method() string {
+	return r.method
+}
+
 // Routes is a helper service for Martini's routing layer.
 // Routes 是为 Martini 路由层提供帮助的服务
 // URLFor 根据给定的路由名称和可选参数的信息，返回相应的路由地址
@@ -266,6 +285,8 @@ type Routes interface {
 	URLFor(name string, params ...interface{}) string
 	// MethodsFor returns an array of methods available for the path
 	MethodsFor(path string) []string
+	// GetAllRoutes returns an array with all the routes in the router.
+	All() []Route
 }
 
 // URLFor returns the url for the given route name.
@@ -293,6 +314,16 @@ func (r *router) URLFor(name string, params ...interface{}) string {
 	}
 
 	return route.URLWith(args)
+}
+
+func (r *router) All() []Route {
+	var ri = make([]Route, len(r.routes))
+
+	for i, route := range r.routes {
+		ri[i] = Route(route)
+	}
+
+	return ri
 }
 
 // 检查 methods 数组中是否有 method

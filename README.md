@@ -1,6 +1,6 @@
 # 代码阅读
 ---
-# Martini  [![wercker status](https://app.wercker.com/status/174bef7e3c999e103cacfe2770102266 "wercker status")](https://app.wercker.com/project/bykey/174bef7e3c999e103cacfe2770102266) [![GoDoc](https://godoc.org/github.com/go-martini/martini?status.png)](http://godoc.org/github.com/go-martini/martini)
+# Martini  [![wercker status](https://app.wercker.com/status/9b7dbc6e2654b604cd694d191c3d5487/s/master "wercker status")](https://app.wercker.com/project/bykey/9b7dbc6e2654b604cd694d191c3d5487)[![GoDoc](https://godoc.org/github.com/go-martini/martini?status.png)](http://godoc.org/github.com/go-martini/martini)
 
 Martini is a powerful package for quickly writing modular web applications/services in Golang.
 
@@ -42,6 +42,10 @@ You will now have a Martini webserver running on `localhost:3000`.
 Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 
 Watch the [Demo Video](http://martini.codegangsta.io/#demo)
+
+Ask questions on Stackoverflow using the [martini tag](http://stackoverflow.com/questions/tagged/martini)
+
+
 
 ## Features
 * Extremely simple to use.
