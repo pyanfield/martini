@@ -132,6 +132,8 @@ func Classic() *ClassicMartini {
 
 // Handler can be any callable function. Martini attempts to inject services into the handler's argument list.
 // Martini will panic if an argument could not be fullfilled via dependency injection.
+// Handler 可以是一切可调用的函数，Martini 尝试注入一些服务到函数的参数列表中。
+// 如果参数不能实现依赖注入，则将 panic
 type Handler interface{}
 
 // 判断 handler 得reflect.Type 是否为 Func 类型，如果不是将 panic
